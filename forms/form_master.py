@@ -341,7 +341,7 @@ class MasterPanel:
         # Generar código de barras con la orden de fabricación
         barcode_value = str(orden_fabricacion)
         # Posicionar el código de barras en el PDF
-        barcode = code128.Code128(barcode_value, barHeight=30, barWidth=1.8)
+        barcode = code128.Code128(barcode_value, barHeight=40, barWidth=1.2)
         barcode.drawOn(c, 80, 485)
 
         # Guarda y cierra el PDF
