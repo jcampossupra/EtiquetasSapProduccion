@@ -5,6 +5,7 @@ import util.generic as utl
 import webbrowser
 import conexion_sap
 from tkinter import messagebox
+from conexion_mysql import conectar_mysql
 import pyodbc
 
 from forms.form_etiquetas_pdf import generar_pdf, generar_segunda_etiqueta
@@ -201,7 +202,7 @@ class MasterPanel:
 
                 # Consulta a SAP
                 sp1 = lio.cursor()
-                sp1.execute("""SELECT T1."OriginNum", T1."DocNum", T0."ItemCode", T0."ItemName", T2."Name",T3."Name", T4."Name"
+                sp1.execute("""SELECT T1."OriginNum", T1."DocNum", T0."ItemCode",T11."ItmsGrpNam", T0."ItemName", T2."Name",T3."Name", T4."Name"
                 ,T5."Name",T6."Name",T7."Name",T8."Name",T9."Name",T10."Name",T0."U_SUP_Uni_Bult"
                 FROM "SBO_EC_TENA12_02"."OITM" T0 
                 INNER JOIN "SBO_EC_TENA12_02"."OWOR" T1 ON T1."ItemCode" = T0."ItemCode"
@@ -214,6 +215,7 @@ class MasterPanel:
                 LEFT JOIN "SBO_EC_TENA12_02"."@EXX_LOGO_PRIMARIO" T8 ON T8."Code" = T0."U_EXX_LOGO_PRI"
                 LEFT JOIN "SBO_EC_TENA12_02"."@EXX_DENSIDAD" T9 ON T9."Code" = T0."U_EXX_DENS"
                 LEFT JOIN "SBO_EC_TENA12_02"."@EXX_PERFORACION" T10 ON T10."Code" = T0."U_EXX_PERFORACION"
+                INNER JOIN "SBO_EC_TENA12_02"."OITB" T11 ON T0."ItmsGrpCod" = T11."ItmsGrpCod"    
                 WHERE T1."DocNum" = ? """, (orden_fabricacion,))
 
                 fila_sap = sp1.fetchone()
@@ -224,20 +226,21 @@ class MasterPanel:
                     return
 
                 datos_sap = {
-                    "Pedido": fila_sap[0],
-                    "Orden": fila_sap[1],
-                    "Codigo": fila_sap[2],
-                    "Producto": fila_sap[3],
-                    "Tratamiento": fila_sap[4],
-                    "Tipo": fila_sap[5],
-                    "Ancho": fila_sap[6],
-                    "Largo": fila_sap[7],
-                    "Espesor": fila_sap[8],
-                    "Color": fila_sap[9],
-                    "Sello": fila_sap[10],
-                    "Densidad": fila_sap[11],
-                    "Perforacion": fila_sap[12],
-                    "Unidades": fila_sap[13],
+                        "Pedido": fila_sap[0],
+                        "Orden": fila_sap[1],
+                        "Codigo": fila_sap[2],
+                        "GrupoArticulo": fila_sap[3],
+                        "Producto": fila_sap[4],
+                        "Tratamiento": fila_sap[5],
+                        "Tipo": fila_sap[6],
+                        "Ancho": fila_sap[7],
+                        "Largo": fila_sap[8],
+                        "Espesor": fila_sap[9],
+                        "Color": fila_sap[10],
+                        "Sello": fila_sap[11],
+                        "Densidad": fila_sap[12],
+                        "Perforacion": fila_sap[13],
+                        "Unidades": fila_sap[14],
                 }
 
                 if not kilos:
@@ -255,6 +258,35 @@ class MasterPanel:
                 # Detecta si se editó manualmente la cantidad
                 if self.editar_kilos_var.get():
                     self.cantidad_fue_editada = (self.kilos.get().strip() != self.kilos_original)
+                grupo = datos_sap["GrupoArticulo"]
+
+                lote_mysql = None
+                tiempo_mysql = None
+
+                try:
+                    conexion = conectar_mysql()
+                    cursor = conexion.cursor()
+
+                    cursor.execute("""
+                        SELECT Tiempo_Duracion, Lote
+                        FROM AUDITORIA_ETIQUETAS_TBL
+                        WHERE Grupo_Articulo = %s
+                        LIMIT 1
+                    """, (grupo,))
+
+                    fila_mysql = cursor.fetchone()
+
+                    if fila_mysql:
+                        tiempo_mysql = fila_mysql[0]
+                        lote_mysql = fila_mysql[1]
+
+                    cursor.close()
+                    conexion.close()
+
+                except Exception as e:
+                    print("Error MySQL:", e)
+                datos_sap["TiempoDuracion"] = tiempo_mysql
+                datos_sap["LoteMysql"] = lote_mysql
 
                 pdf_path = generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, datos_sap, nombre)
                 webbrowser.open_new(pdf_path)

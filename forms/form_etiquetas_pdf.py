@@ -31,9 +31,9 @@ def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, dat
     c.setFillColor(texto_color)
 
     # CABEZA DE LA ETIQUETA
-    default_text = "VIA SAMBORONDÓN KM 1.5 S/N EDIF.XIMA-TORRE B"
+    default_text = "VIA SAMBORONDÓN KM 1.5 S/N EDIF.XIMA"
     default_textb = "PISO 5 - OFIC 512 TELEFONO 3728600"
-    c.drawString(60, 770, default_text)
+    c.drawString(100, 770, default_text)
     c.setFont("Helvetica", 13)
     c.drawString(100, 755, default_textb)
 
@@ -43,8 +43,9 @@ def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, dat
     c.setFont("Helvetica", 18)
     c.drawString(10, 705, f"ORDEN: {orden_fabricacion}")
 
+    codigo = f"CODIGO: {datos_sap['Codigo']}"
     c.setFont("Helvetica-Bold", 25)
-    c.drawString(10, 675, f"CODIGO: {datos_sap['Codigo']}")
+    c.drawString(10, 675, codigo)
 
     producto = datos_sap['Producto']
     c.setFont("Helvetica", 14)
@@ -66,7 +67,23 @@ def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, dat
     c.drawString(130, 550, f"{kilos} UNIDADES")
 
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
-    fecha_vencimiento = (datetime.now() + timedelta(days=365)).strftime("%d/%m/%Y")
+
+    # Por defecto un año (como funciona actualmente)
+    dias_vencimiento = 365
+
+    tiempo = datos_sap.get("TiempoDuracion")
+    # Solo si la BD tiene un tiempo de duración lo reemplazo
+    if tiempo:
+        tiempo = tiempo.strip().lower()
+        if tiempo == "6 meses":
+            dias_vencimiento = 180
+        elif tiempo == "12 meses":
+            dias_vencimiento = 365
+        elif tiempo == "24 meses":
+            dias_vencimiento = 730
+    fecha_vencimiento = (datetime.now() + timedelta(days=dias_vencimiento)).strftime("%d/%m/%Y")
+        
+    
 
     c.setFont("Helvetica", 15)
     c.drawString(80, 530, f"F.E: {fecha_actual}")
@@ -76,7 +93,12 @@ def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, dat
     fecha_d = datetime.now().strftime("%d")
     fecha_m = datetime.now().strftime("%m")
     fecha_a = datetime.now().strftime("%Y")
-    c.drawString(210, 705, f"LOTE: 1{nombre}{operador}{fecha_d}{fecha_m}{fecha_a}")
+    # Lote original
+    lote = f"1{nombre}{operador}{fecha_d}{fecha_m}{fecha_a}"
+    # Si en la BD existe un lote, lo reemplazo
+    if datos_sap.get("LoteMysql"):
+        lote = datos_sap["LoteMysql"]
+    c.drawString(210, 705, f"LOTE: {lote}")
 
     # === GENERAR CÓDIGO DE BARRAS ===
     barcode_value = str(orden_fabricacion)
@@ -126,7 +148,7 @@ def generar_segunda_etiqueta(orden_fabricacion, poquillo, operador, kilos, finca
 
     # OJO ETIQUETA PARA FINCA J.CAMPOS
     # CABEZA DE LA ETIQUETA
-    default_text = "VIA SAMBORONDÓN KM 1.5 S/N EDIF.XIMA-TORRE B"
+    default_text = "VIA SAMBORONDÓN KM 1.5 S/N EDIF.XIMA"
     default_textb = "PISO 5 - OFIC 512 TELEFONO 3728600"
     width, height = letter
     text_width = c.stringWidth(default_text, "Helvetica", 14)
@@ -170,13 +192,28 @@ def generar_segunda_etiqueta(orden_fabricacion, poquillo, operador, kilos, finca
     fecha_d = datetime.now().strftime("%d")
     fecha_m = datetime.now().strftime("%m")
     fecha_a = datetime.now().strftime("%Y")
-    c.drawString(210, 705, f"LOTE: 1{nombre}{operador}{fecha_d}{fecha_m}{fecha_a}")
+    # Lote original
+    lote = f"1{nombre}{operador}{fecha_d}{fecha_m}{fecha_a}"
+    # Si en la BD existe un lote, lo reemplazo
+    if datos_sap.get("LoteMysql"):
+        lote = datos_sap["LoteMysql"]
+    c.drawString(210, 705, f"LOTE: {lote}")
     c.setFont("Helvetica", 15)
 
     # Agrega fecha de vencimiento igual que xavier toma misma fecha y al año le suma +1
-    fecha_vencimiento = (datetime.now() + timedelta(days=365)).strftime("%d/%m/%Y")
-    c.drawString(230, 530, f"F.V: {fecha_vencimiento}")
+    dias_vencimiento = 365
+    tiempo = datos_sap.get("TiempoDuracion")
+    if tiempo:
+        tiempo = tiempo.strip().lower()
 
+        if tiempo == "6 meses":
+            dias_vencimiento = 180
+        elif tiempo == "12 meses":
+            dias_vencimiento = 365
+        elif tiempo == "24 meses":
+            dias_vencimiento = 730
+    fecha_vencimiento = ( datetime.now() + timedelta(days=dias_vencimiento)).strftime("%d/%m/%Y")
+    c.drawString(230, 530, f"F.V: {fecha_vencimiento}")
     # Generar código de barras con la orden de fabricación
     barcode_value = str(orden_fabricacion)
     barcode = code128.Code128(barcode_value, barHeight=40, barWidth=0.7)
