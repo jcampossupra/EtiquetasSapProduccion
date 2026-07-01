@@ -32,11 +32,11 @@ class App:
             if len(cds) > 0:
             
                 nombre = usu[:3].upper()
-                
+                usuario_completo = usu.upper()
                 print("Traigo las dos primeras letras del usuario:", nombre)
-                
+                print("Usuario completo:", usuario_completo)
                 self.ventana.destroy()
-                MasterPanel(nombre)
+                MasterPanel(nombre, usuario_completo)
                 
         except pyodbc.Error as e:
             messagebox.showerror(message=str(e), title="Error")

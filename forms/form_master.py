@@ -14,8 +14,9 @@ lio = conexion_sap.cnsap
 
 
 class MasterPanel:
-    def __init__(self, nombre):
+    def __init__(self, nombre, usuario_completo):
         self.nombre = nombre
+        self.usuario_completo = usuario_completo
 
         # CONTROL DE EDICION MANUAL DE KILOS
         self.kilos_original = ""
@@ -288,7 +289,7 @@ class MasterPanel:
                 datos_sap["TiempoDuracion"] = tiempo_mysql
                 datos_sap["LoteMysql"] = lote_mysql
 
-                pdf_path = generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, datos_sap, nombre)
+                pdf_path = generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, datos_sap, nombre, self.usuario_completo)
                 webbrowser.open_new(pdf_path)
 
                 if finca:

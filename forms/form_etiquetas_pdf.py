@@ -5,7 +5,7 @@ from reportlab.graphics.barcode import code128
 import os
 
 
-def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, datos_sap, nombre):
+def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, datos_sap, nombre,usuario_completo):
     # Crea un documento PDF
     pdf_path = os.path.join(os.path.expanduser('~'), 'etiqueta.pdf')
     c = canvas.Canvas(pdf_path, pagesize=letter)
@@ -59,6 +59,15 @@ def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, dat
     c.drawString(10, 620, f"TIPO: {datos_sap['Tipo']}")
     c.drawString(250, 620, f"DENSIDAD: {datos_sap['Densidad']}")
     c.drawString(250, 605, f"PERF: {datos_sap['Perforacion']}")
+    siglas_usuario = ""
+    if usuario_completo.upper() == "ALEXIS ALVARADO":
+        siglas_usuario = "BOD"
+    elif usuario_completo.upper() == "CALIDAD":
+        siglas_usuario = "CL"
+    if siglas_usuario:
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(250, 590, siglas_usuario)
+        c.setFont("Helvetica", 15)  # restaurar la fuente anterior
     c.drawString(10, 605, f"MEDIDAS: {datos_sap['Ancho']}X{datos_sap['Largo']}X{datos_sap['Espesor']}")
     c.drawString(10, 590, f"COLOR: {datos_sap['Color']}")
     c.drawString(10, 575, f"SELLO: {datos_sap['Sello']}")
@@ -121,7 +130,7 @@ def generar_pdf(orden_fabricacion, poquillo, operador, kilos, finca, codfin, dat
     return pdf_path
 
 
-def generar_segunda_etiqueta(orden_fabricacion, poquillo, operador, kilos, finca, codfin, datos_sap, nombre):
+def generar_segunda_etiqueta(orden_fabricacion, poquillo, operador, kilos, finca, codfin, datos_sap, nombre, usuario_completo):
     # Crea un documento PDF para la segunda etiqueta
     pdf_path_segunda_etiqueta = os.path.join(os.path.expanduser('~'), 'segunda_etiqueta.pdf')
     c = canvas.Canvas(pdf_path_segunda_etiqueta, pagesize=letter)
